@@ -144,3 +144,143 @@ etag master Lastchangedat
     CurrencyCode = currency_code;
   }
 }
+
+
+
+@EndUserText.label: 'Travel Root Projection'
+@AccessControl.authorizationCheck: #CHECK
+@UI.headerInfo:{
+   typeName: 'ProcessorTravel',
+   typeNamePlural: 'ProcessorTravels',
+   title: { type: #STANDARD, value: 'TravelId' },
+   description :{ type: #STANDARD, value: 'Description' }
+}
+@Search.searchable: true
+define root view entity ZC_BKL_XX_TRAVEL_PROCESSOR 
+    as projection on ZBKL_XX_M_TRAVEL {
+    
+    @UI.facet: [{
+        id:'Travel',
+        purpose: #STANDARD,
+        type: #IDENTIFICATION_REFERENCE,
+        label: 'Travel',
+        position: 10
+     }]
+    
+    @UI.selectionField: [{position: 10 }]
+    @UI.lineItem: [{position: 10 }]
+    @UI.identification: [{position: 10, label: 'Travel ID[1,..,99999999]' }]
+    @Search.defaultSearchElement: true
+    @ObjectModel.text.element: ['Description']
+    key TravelId,
+    @UI.selectionField: [{position: 20 }]
+    @UI.lineItem: [{position: 20 }]
+    @UI.identification: [{position: 20 }]
+    @Search.defaultSearchElement: true
+    @Consumption.valueHelpDefinition: [{entity: {name: '/DMO/I_Agency', element: 'agency_id'} }]
+    @ObjectModel.text.element: ['AgencyName']
+    AgencyId,
+    _Agency.name as AgencyName,
+    @UI.selectionField: [{position: 30 }]
+    @UI.lineItem: [{position: 30 }]
+    @UI.identification: [{position: 30 }]
+    @Search.defaultSearchElement: true
+    @Consumption.valueHelpDefinition: [{entity: {name: '/DMO/I_Customer', element: 'customer_id'} }]
+    @ObjectModel.text.element: ['CustomerName']
+    CustomerId,
+    _Customer.first_name as CustomerName,
+    @UI.identification: [{position: 40 }]
+    @UI.lineItem: [{position: 40 }]
+    BeginDate,
+    @UI.identification: [{position: 50 }]
+    EndDate,
+    @UI.identification: [{position: 60 }]
+    BookingFee,
+    @UI.identification: [{position: 70 }]
+    TotalPrice,
+    CurrencyCode,
+    @UI.identification: [{position: 80 }]
+    Description,
+    @UI.identification: [{position: 90 }]
+    Status,
+    @UI.hidden: true
+    Lastchangedat,
+    /* Associations */
+    _Agency,
+    _Booking : redirected to composition child ZC_BKL_XX_BOOKING_PROCESSOR,
+    _Currency,
+    _Customer
+}
+
+
+
+
+@EndUserText.label: 'booking processor projection'
+@AccessControl.authorizationCheck: #CHECK
+@UI.headerInfo:{
+    typeName: 'Booking',
+    typeNamePlural: 'Bookings',
+    title:{ type: #STANDARD, value: 'BookingId' }
+}
+define view entity ZC_BKL_XX_BOOKING_PROCESSOR 
+as projection on ZBKL_XX_M_BOOKING {
+    @UI.facet: [{
+        id: 'Booking',
+        purpose: #STANDARD,
+        type: #IDENTIFICATION_REFERENCE,
+        label: 'Booking',
+        position: 10        
+     }]
+
+    @Search.defaultSearchElement: true
+    key TravelId,
+    @UI : { lineItem: [{position: 20, importance: #HIGH }],
+            identification: [{position: 20 }] }
+    key BookingId,
+    @UI : { lineItem: [{position: 30, importance: #HIGH }],
+            identification: [{position: 30 }] }
+    BookingDate,
+    @UI : { lineItem: [{position: 40, importance: #HIGH }],
+            identification: [{position: 40 }] }
+    @Consumption.valueHelpDefinition: [{entity: {name: '/DMO/I_Customer', element: 'customer_id'} }]
+    CustomerId,
+    @UI : { lineItem: [{position: 50, importance: #HIGH }],
+            identification: [{position: 50 }] }
+    @Consumption.valueHelpDefinition: [{entity: {name: '/DMO/I_Carrier', element: 'AirlineID'} }]
+    CarrierId,
+    @UI : { lineItem: [{position: 60, importance: #HIGH }],
+            identification: [{position: 60 }] }
+    @Consumption.valueHelpDefinition: [{entity: {name: '/DMO/I_Flight', element: 'ConnectionID'} ,
+                                       additionalBinding: [{ localElement: 'FlightDate', element: 'FlightDate' },
+                                       { localElement: 'CarrierId', element: 'AirlineID' },
+                                       { localElement: 'FlightPrice', element: 'Price' },
+                                       { localElement: 'CurrencyCode', element: 'CurrencyCode' }]
+    }]
+    ConnectionId,
+    @UI : { lineItem: [{position: 70, importance: #HIGH }],
+            identification: [{position: 70 }] }
+    @Consumption.valueHelpDefinition: [{entity: {name: '/DMO/I_Flight', element: 'FlightDate'} ,
+                                       additionalBinding: [{ localElement: 'FlightDate', element: 'FlightDate' },
+                                       { localElement: 'CarrierId', element: 'AirlineID' },
+                                       { localElement: 'FlightPrice', element: 'Price' },
+                                       { localElement: 'CurrencyCode', element: 'CurrencyCode' }]
+    }]
+    FlightDate,
+    @UI : { lineItem: [{position: 80, importance: #HIGH }],
+            identification: [{position: 80 }] }
+    @Semantics.amount.currencyCode: 'CurrencyCode'            
+    FlightPrice,
+    @Consumption.valueHelpDefinition: [{entity: {name: 'I_Currency', element: 'Currency'} }]
+    CurrencyCode,
+    @UI.hidden: true
+    Lastchangedat,
+    /* Associations */
+    _Carrier,
+    _Connection,
+    _Customer,
+    _Travel : redirected to parent ZC_BKL_XX_TRAVEL_PROCESSOR
+}
+
+
+
+
