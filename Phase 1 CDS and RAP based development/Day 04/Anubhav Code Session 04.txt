@@ -1,0 +1,86 @@
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@AccessControl.authorizationCheck: #CHECK
+@EndUserText.label: 'Travel Root Entity for Managed Scenario'
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType:{
+    serviceQuality: #X,
+    sizeCategory: #S,
+    dataClass: #MIXED
+}
+define root view entity ZBKL_XX_M_TRAVEL as select from /dmo/travel as Travel
+
+composition[0..*] of ZBKL_XX_M_BOOKING as _Booking
+
+association[1] to /dmo/agency as _Agency on
+$projection.AgencyId = _Agency.agency_id
+association[1] to /dmo/customer as _Customer on
+$projection.CustomerId = _Customer.customer_id
+association[1] to I_Currency as _Currency on
+$projection.CurrencyCode = _Currency.Currency 
+{
+    key Travel.travel_id as TravelId,
+    Travel.agency_id as AgencyId,
+    Travel.customer_id as CustomerId,
+    Travel.begin_date as BeginDate,
+    Travel.end_date as EndDate,
+    @Semantics.amount.currencyCode: 'CurrencyCode'
+    Travel.booking_fee as BookingFee,
+    @Semantics.amount.currencyCode: 'CurrencyCode'
+    Travel.total_price as TotalPrice,
+    Travel.currency_code as CurrencyCode,
+    Travel.description as Description,
+    Travel.status as Status,
+    @Semantics.user.createdBy: true
+    Travel.createdby as Createdby,
+    @Semantics.systemDateTime.createdAt: true
+    Travel.createdat as Createdat,
+    @Semantics.user.lastChangedBy: true
+    Travel.lastchangedby as Lastchangedby,
+    @Semantics.systemDateTime.lastChangedAt: true
+    Travel.lastchangedat as Lastchangedat,
+    _Agency,
+    _Customer,
+    _Currency,
+    _Booking
+}
+
+
+
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@AccessControl.authorizationCheck: #CHECK
+@EndUserText.label: 'Booking Entity, Child of Travel 1..n'
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType:{
+    serviceQuality: #X,
+    sizeCategory: #S,
+    dataClass: #MIXED
+}
+define view entity ZBKL_XX_M_BOOKING as select from /dmo/booking as Booking 
+association to parent ZBKL_XX_M_TRAVEL as _Travel on
+$projection.TravelId = _Travel.TravelId
+association[1..1] to /DMO/I_Customer as _Customer on 
+$projection.CustomerId = _Customer.CustomerID
+association[1..1] to /dmo/carrier as _Carrier on
+$projection.CarrierId = _Carrier.carrier_id
+association[1..1] to /DMO/I_Connection as _Connection on 
+$projection.CarrierId = _Connection.AirlineID
+and $projection.ConnectionId = _Connection.ConnectionID
+{
+    key Booking.travel_id as TravelId,
+    key Booking.booking_id as BookingId,
+    Booking.booking_date as BookingDate,
+    Booking.customer_id as CustomerId,
+    Booking.carrier_id as CarrierId,
+    Booking.connection_id as ConnectionId,
+    Booking.flight_date as FlightDate,
+    @Semantics.amount.currencyCode: 'CurrencyCode'
+    Booking.flight_price as FlightPrice,
+    Booking.currency_code as CurrencyCode,
+    @UI.hidden: true
+    _Travel.Lastchangedat,  --take care of the ETag from parent
+    /*Having a feeling of best friend*/
+    _Travel,
+    _Customer,
+    _Carrier,
+    _Connection
+}
