@@ -9,24 +9,29 @@
 
 
 
-  METHOD validateCustomer.
-    READ ENTITIES OF ZI_Travel_M_AB IN LOCAL MODE
+    METHOD validateCustomer.
+
+    "Step 1: Read the entity data customer ID
+    READ ENTITIES OF ZBKL_XX_M_TRAVEL IN LOCAL MODE
         ENTITY Travel
           FIELDS ( customerid )
           WITH CORRESPONDING #( keys )
         RESULT DATA(lt_travel)
         FAILED DATA(lt_failed).
 
+    "Step 2: mapped failed
     failed =  CORRESPONDING #( DEEP lt_failed  ).
 
     DATA lt_customer TYPE SORTED TABLE OF /dmo/customer WITH UNIQUE KEY customer_id.
 
+    "Step 3: Get all the unique customer IDs to a internal table
     " Optimization of DB select: extract distinct non-initial customer IDs
     lt_customer = CORRESPONDING #( lt_travel DISCARDING DUPLICATES MAPPING customer_id = customerid EXCEPT * ).
     DELETE lt_customer WHERE customer_id IS INITIAL.
 
     IF  lt_customer IS NOT INITIAL.
       " Check if customer ID exists
+      "Step 4: Select from customer master table and fetch info - itab
       SELECT FROM /dmo/customer FIELDS customer_id
                                 FOR ALL ENTRIES IN @lt_customer
                                 WHERE customer_id = @lt_customer-customer_id
@@ -34,14 +39,16 @@
     ENDIF.
 
     " Raise message for non existing customer id
+    "Step 5: Loop at each travel record, check if itab has that customerId
     LOOP AT lt_travel INTO DATA(ls_travel).
 
       APPEND VALUE #(  %tky                 = ls_travel-%tky
                        %state_area          = 'VALIDATE_CUSTOMER' ) TO reported-travel.
 
+      "Step 6: if we not find - Throw Error 1
       IF ls_travel-customerid IS  INITIAL.
         APPEND VALUE #( %tky = ls_travel-%tky ) TO failed-travel.
-
+        "Step 7: Return the %tky, %state_area, %element, %msg
         APPEND VALUE #( %tky                = ls_travel-%tky
                         %state_area         = 'VALIDATE_CUSTOMER'
                         %msg                = NEW /dmo/cm_flight_messages(
@@ -49,9 +56,10 @@
                                                                 severity = if_abap_behv_message=>severity-error )
                         %element-customerid = if_abap_behv=>mk-on ) TO reported-travel.
 
+      "Step 6: if we not find -  Not Valid - Throw Error2
       ELSEIF ls_travel-customerid IS NOT INITIAL AND NOT line_exists( lt_customer_db[ customer_id = ls_travel-customerid ] ).
         APPEND VALUE #(  %tky = ls_travel-%tky ) TO failed-travel.
-
+        "Step 7: Return the %tky, %state_area, %element, %msg
         APPEND VALUE #(  %tky                = ls_travel-%tky
                          %state_area         = 'VALIDATE_CUSTOMER'
                          %msg                = NEW /dmo/cm_flight_messages(
@@ -61,6 +69,7 @@
                          %element-customerid = if_abap_behv=>mk-on ) TO reported-travel.
       ENDIF.
      ENDLOOP.
+
   ENDMETHOD.
 
   METHOD validateDates.
