@@ -1,0 +1,42 @@
+PreRequisite
+node 14
+npm install -g @ui5/cli
+npm install -g @sap/ux-ui5-tooling
+
+
+1. Create new folder
+2. Go inside terminal for the folder
+3. First create a node project - npm init
+4. Create a webapp folder and bring all your files
+5. Add ui5 tooling to project to serve it locally - ui5 init (auto create a ui5.yml file)
+this file will tell ui5 tooling about our project that its app, lib, plugin, comp? we can also add server config in this file through middleare
+we dont need the neo-app.json anymore.
+6. Go to Command prompt and use ui5 serve command to start server
+
+Now comes the connectivity
+1. Add a middleware entry (used to do in neo-app in webide for server route)
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        backend:
+        - path: /sap/opu/odata
+          url: http://s4dev.st.com:8021/
+2.  Install the middleware which is part od latest ui5 tooling 
+npm install @sap/ux-ui5-tooling
+3.  ui5 serve, now the proxy starts and takes data from server
+
+
+Packaging
+
+In a typical Fiori App, we have verity of files inside our project (XML, Fragments, Controllers, Formatters, JS), When we start our project, all these files are served by Server sequentially, which means it has a synchronous loading. When browser download these files individually, it takes a while to download them. So the total booting time of our app is equals to the sum of time of each file.
+
+Run ui5 build command
+and distribution folder gets created 
+
+
+Deployment
+- Add deployment configuration - fiori add deploy-config
+- Go to package json and add build config "build":"ui5 build"
+- Run the Deploy script
